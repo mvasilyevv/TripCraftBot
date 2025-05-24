@@ -74,14 +74,14 @@ class TestTravelRecommendation:
             description="Отличное место для семейного отдыха",
             highlights=["Пляжи", "Аквапарки", "Исторические места"],
             practical_info="Виза не нужна, прямые рейсы",
-            estimated_cost="$800-1200",
+            estimated_cost="80 000-120 000₽",
             duration="7-10 дней",
             best_time="Май-октябрь",
         )
 
         assert recommendation.destination == "Анталья, Турция"
         assert len(recommendation.highlights) == 3
-        assert recommendation.estimated_cost == "$800-1200"
+        assert recommendation.estimated_cost == "80 000-120 000₽"
 
     def test_format_for_telegram(self) -> None:
         """Тест форматирования для Telegram"""
@@ -89,8 +89,8 @@ class TestTravelRecommendation:
             destination="Анталья, Турция",
             description="Отличное место для семейного отдыха",
             highlights=["Пляжи", "Аквапарки"],
-            practical_info="Виза не нужна",
-            estimated_cost="$800-1200",
+            practical_info="Виза не нужна для граждан России. Лучшее время для поездки - май-октябрь.",
+            estimated_cost="80 000-120 000₽",
         )
 
         formatted = recommendation.format_for_telegram()
@@ -101,7 +101,7 @@ class TestTravelRecommendation:
         assert "• Пляжи" in formatted
         assert "• Аквапарки" in formatted
         assert "📋 **Практическая информация:**" in formatted
-        assert "💰 **Примерная стоимость:** $800-1200" in formatted
+        assert "💰 **Стоимость:** 80 000-120 000₽" in formatted
 
     def test_format_minimal_recommendation(self) -> None:
         """Тест форматирования минимальной рекомендации"""

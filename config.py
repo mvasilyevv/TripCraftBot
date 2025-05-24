@@ -58,6 +58,10 @@ def create_configuration() -> BotConfiguration:
             telegram=TelegramConfig(
                 bot_token=_get_env_or_exit("TELEGRAM_BOT_TOKEN", "токен Telegram бота"),
                 webhook_url=os.getenv("TELEGRAM_WEBHOOK_URL"),
+                webhook_secret_token=os.getenv("TELEGRAM_WEBHOOK_SECRET_TOKEN"),
+                webhook_max_connections=_get_env_int("TELEGRAM_WEBHOOK_MAX_CONNECTIONS", 40),
+                webhook_allowed_updates=os.getenv("TELEGRAM_WEBHOOK_ALLOWED_UPDATES", "").split(",") if os.getenv("TELEGRAM_WEBHOOK_ALLOWED_UPDATES") else None,
+                use_webhook=_get_env_bool("USE_WEBHOOK", False),
             ),
             openrouter=OpenRouterConfig(
                 api_key=_get_env_or_exit("OPENROUTER_API_KEY", "ключ OpenRouter API"),

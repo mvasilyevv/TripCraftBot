@@ -1,0 +1,61 @@
+services:
+  tripcraft-bot:
+    build: .
+    container_name: tripcraft-bot
+    restart: unless-stopped
+    ports:
+      - "8000:8000"  # webhook server
+    environment:
+      # ОСНОВНЫЕ переменные
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+
+      # Redis подключение
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-1234}
+
+      # Дополнительные настройки
+      - PRIMARY_MODEL=${PRIMARY_MODEL:-perplexity/llama-3.1-sonar-large-128k-online}
+      - FALLBACK_MODEL=${FALLBACK_MODEL:-anthropic/claude-3-haiku}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - USE_WEBHOOK=true
+
+    volumes:
+      - ./logs:/app/logs  # Логи (опционально)
+    depends_on:
+      - redis
+      - ngrok
+    networks:
+      - tripcraft-network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: tripcraft-ngrok
+    restart: unless-stopped
+    ports:
+      - "4040:4040"  # ngrok web UI
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: ["http", "tripcraft-bot:8000"]
+    networks:
+      - tripcraft-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: tripcraft-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"  # Redis порт (опционально для внешнего доступа)
+    volumes:
+      - redis_data:/data
+    networks:
+      - tripcraft-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-1234}
+
+volumes:
+  redis_data:
+
+networks:
+  tripcraft-network:
+    driver: bridge

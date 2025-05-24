@@ -2,6 +2,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 
 class FamilyTravelStates(StatesGroup):
+    asking_destination = State()
     asking_family_size = State()
     asking_travel_time = State()
     asking_priority = State()
@@ -9,6 +10,7 @@ class FamilyTravelStates(StatesGroup):
 
 
 class PetTravelStates(StatesGroup):
+    asking_destination = State()
     asking_pet_type = State()
     asking_transport = State()
     asking_duration = State()
@@ -16,12 +18,14 @@ class PetTravelStates(StatesGroup):
 
 
 class PhotoTravelStates(StatesGroup):
+    asking_destination = State()
     asking_photo_type = State()
     asking_difficulty = State()
     processing = State()
 
 
 class BudgetTravelStates(StatesGroup):
+    asking_destination = State()
     asking_budget = State()
     asking_days = State()
     asking_included = State()
@@ -29,6 +33,7 @@ class BudgetTravelStates(StatesGroup):
 
 
 class ActiveTravelStates(StatesGroup):
+    asking_destination = State()
     asking_activity_type = State()
     asking_skill_level = State()
     processing = State()
@@ -54,9 +59,9 @@ CATEGORY_STATES = {
 
 # Количество вопросов для каждой категории
 CATEGORY_QUESTIONS_COUNT = {
-    "family": 3,
-    "pets": 3,
-    "photo": 2,
-    "budget": 3,
-    "active": 2,
+    "family": 4,
+    "pets": 4,
+    "photo": 3,
+    "budget": 4,
+    "active": 3,
 }

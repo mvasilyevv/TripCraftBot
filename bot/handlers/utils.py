@@ -13,11 +13,11 @@ def get_current_question_number(category: str, question_key: str) -> int:
     """Получает номер текущего вопроса"""
     # Маппинг вопросов для каждой категории
     category_questions = {
-        "family": ["family_size", "travel_time", "priority"],
-        "pets": ["pet_type", "transport", "duration"],
-        "photo": ["photo_type", "difficulty"],
-        "budget": ["budget", "days", "included"],
-        "active": ["activity_type", "skill_level"],
+        "family": ["destination", "family_size", "travel_time", "priority"],
+        "pets": ["destination", "pet_type", "transport", "duration"],
+        "photo": ["destination", "photo_type", "difficulty"],
+        "budget": ["destination", "budget", "days", "included"],
+        "active": ["destination", "activity_type", "skill_level"],
     }
 
     questions = category_questions.get(category, [])

@@ -192,3 +192,15 @@ temp/
 # IDE
 .idea/
 .vscode/
+
+# Debug and test scripts
+debug_*.py
+test_*.sh
+check_*.py
+minimal_*.py
+quick_*.py
+*_debug.*
+*_test.*
+scripts/debug*
+scripts/test*
+scripts/check*

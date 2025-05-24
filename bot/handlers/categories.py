@@ -14,6 +14,7 @@ from bot.keyboards.inline import (
     get_activity_type_keyboard,
     get_budget_days_keyboard,
     get_budget_keyboard,
+    get_destination_keyboard,
     get_difficulty_keyboard,
     get_duration_keyboard,
     get_family_priority_keyboard,
@@ -37,9 +38,144 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
+
+# Маппинг состояний для навигации назад (строковые представления)
+BACK_NAVIGATION_MAP = {
+    # Family
+    "FamilyTravelStates:asking_family_size": FamilyTravelStates.asking_destination,
+    "FamilyTravelStates:asking_travel_time": FamilyTravelStates.asking_family_size,
+    "FamilyTravelStates:asking_priority": FamilyTravelStates.asking_travel_time,
+
+    # Pets
+    "PetTravelStates:asking_pet_type": PetTravelStates.asking_destination,
+    "PetTravelStates:asking_transport": PetTravelStates.asking_pet_type,
+    "PetTravelStates:asking_duration": PetTravelStates.asking_transport,
+
+    # Photo
+    "PhotoTravelStates:asking_photo_type": PhotoTravelStates.asking_destination,
+    "PhotoTravelStates:asking_difficulty": PhotoTravelStates.asking_photo_type,
+
+    # Budget
+    "BudgetTravelStates:asking_budget": BudgetTravelStates.asking_destination,
+    "BudgetTravelStates:asking_days": BudgetTravelStates.asking_budget,
+    "BudgetTravelStates:asking_included": BudgetTravelStates.asking_days,
+
+    # Active
+    "ActiveTravelStates:asking_activity_type": ActiveTravelStates.asking_destination,
+    "ActiveTravelStates:asking_skill_level": ActiveTravelStates.asking_activity_type,
+}
+
+
+# Маппинг состояний к категориям и вопросам для навигации назад
+STATE_TO_CATEGORY_QUESTION = {
+    # Family
+    FamilyTravelStates.asking_destination: ("family", "destination"),
+    FamilyTravelStates.asking_family_size: ("family", "family_size"),
+    FamilyTravelStates.asking_travel_time: ("family", "travel_time"),
+    FamilyTravelStates.asking_priority: ("family", "priority"),
+
+    # Pets
+    PetTravelStates.asking_destination: ("pets", "destination"),
+    PetTravelStates.asking_pet_type: ("pets", "pet_type"),
+    PetTravelStates.asking_transport: ("pets", "transport"),
+    PetTravelStates.asking_duration: ("pets", "duration"),
+
+    # Photo
+    PhotoTravelStates.asking_destination: ("photo", "destination"),
+    PhotoTravelStates.asking_photo_type: ("photo", "photo_type"),
+    PhotoTravelStates.asking_difficulty: ("photo", "difficulty"),
+
+    # Budget
+    BudgetTravelStates.asking_destination: ("budget", "destination"),
+    BudgetTravelStates.asking_budget: ("budget", "budget"),
+    BudgetTravelStates.asking_days: ("budget", "days"),
+    BudgetTravelStates.asking_included: ("budget", "included"),
+
+    # Active
+    ActiveTravelStates.asking_destination: ("active", "destination"),
+    ActiveTravelStates.asking_activity_type: ("active", "activity_type"),
+    ActiveTravelStates.asking_skill_level: ("active", "skill_level"),
+}
+
+
+async def handle_back_navigation(callback: CallbackQuery, state: FSMContext) -> None:
+    """Обрабатывает навигацию назад по вопросам"""
+    current_state = await state.get_state()
+
+    if not current_state:
+        # Если состояния нет, возвращаемся в главное меню
+        from bot.keyboards.inline import get_main_menu_keyboard
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(
+                "Выберите тип путешествия:",
+                reply_markup=get_main_menu_keyboard()
+            )
+        return
+
+    # Получаем предыдущее состояние
+    previous_state = BACK_NAVIGATION_MAP.get(current_state)
+
+    if not previous_state:
+        # Если предыдущего состояния нет, возвращаемся в главное меню
+        from bot.keyboards.inline import get_main_menu_keyboard
+        await state.clear()
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(
+                "Выберите тип путешествия:",
+                reply_markup=get_main_menu_keyboard()
+            )
+        return
+
+    # Устанавливаем предыдущее состояние
+    await state.set_state(previous_state)
+
+    # Получаем информацию о предыдущем вопросе
+    category, question_key = STATE_TO_CATEGORY_QUESTION.get(previous_state, (None, None))
+
+    if not category or not question_key:
+        # Если не можем определить категорию, возвращаемся в главное меню
+        from bot.keyboards.inline import get_main_menu_keyboard
+        await state.clear()
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(
+                "Выберите тип путешествия:",
+                reply_markup=get_main_menu_keyboard()
+            )
+        return
+
+    # Получаем данные вопроса
+    question_data = CATEGORY_QUESTIONS[category][question_key]
+    question_text = question_data["text"]
+    keyboard_func = question_data["keyboard"]
+
+    # Получаем номер текущего вопроса для прогресса
+    current_question = get_current_question_number(category, question_key)
+    progress_text = get_progress_text(category, current_question)
+
+    # Формируем полный текст с прогрессом
+    full_text = f"{progress_text}\n\n{question_text}"
+
+    # Определяем, какую кнопку "Назад" показывать
+    if question_key == "destination":
+        # Для первого вопроса показываем кнопку "Главное меню"
+        keyboard = keyboard_func(show_back_to_menu=True)
+    else:
+        # Для остальных вопросов показываем кнопку "Назад"
+        keyboard = keyboard_func(show_back=True)
+
+    # Отправляем предыдущий вопрос
+    if callback.message and isinstance(callback.message, Message):
+        await callback.message.edit_text(full_text, reply_markup=keyboard)
+
+
 # Маппинг вопросов для каждой категории
 CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
     "family": {
+        "destination": {
+            "text": "Куда хотите поехать?",
+            "keyboard": get_destination_keyboard,
+            "next_state": FamilyTravelStates.asking_family_size,
+        },
         "family_size": {
             "text": "Сколько человек будет путешествовать?",
             "keyboard": get_family_size_keyboard,
@@ -57,6 +193,11 @@ CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
         },
     },
     "pets": {
+        "destination": {
+            "text": "Куда хотите поехать с питомцем?",
+            "keyboard": get_destination_keyboard,
+            "next_state": PetTravelStates.asking_pet_type,
+        },
         "pet_type": {
             "text": "Какой у вас питомец?",
             "keyboard": get_pet_type_keyboard,
@@ -74,6 +215,11 @@ CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
         },
     },
     "photo": {
+        "destination": {
+            "text": "В каком городе/стране ищете места для фото?",
+            "keyboard": get_destination_keyboard,
+            "next_state": PhotoTravelStates.asking_photo_type,
+        },
         "photo_type": {
             "text": "Какие фото вас интересуют?",
             "keyboard": get_photo_type_keyboard,
@@ -86,6 +232,11 @@ CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
         },
     },
     "budget": {
+        "destination": {
+            "text": "Куда хотите поехать?",
+            "keyboard": get_destination_keyboard,
+            "next_state": BudgetTravelStates.asking_budget,
+        },
         "budget": {
             "text": "Какой у вас бюджет на человека?",
             "keyboard": get_budget_keyboard,
@@ -103,6 +254,11 @@ CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
         },
     },
     "active": {
+        "destination": {
+            "text": "В каком городе/стране ищете активный отдых?",
+            "keyboard": get_destination_keyboard,
+            "next_state": ActiveTravelStates.asking_activity_type,
+        },
         "activity_type": {
             "text": "Какой вид активности вас интересует?",
             "keyboard": get_activity_type_keyboard,
@@ -119,24 +275,190 @@ CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
 # Маппинг состояний на категории и вопросы
 STATE_TO_CATEGORY_QUESTION = {
     # Family
+    FamilyTravelStates.asking_destination: ("family", "destination"),
     FamilyTravelStates.asking_family_size: ("family", "family_size"),
     FamilyTravelStates.asking_travel_time: ("family", "travel_time"),
     FamilyTravelStates.asking_priority: ("family", "priority"),
     # Pets
+    PetTravelStates.asking_destination: ("pets", "destination"),
     PetTravelStates.asking_pet_type: ("pets", "pet_type"),
     PetTravelStates.asking_transport: ("pets", "transport"),
     PetTravelStates.asking_duration: ("pets", "duration"),
     # Photo
+    PhotoTravelStates.asking_destination: ("photo", "destination"),
     PhotoTravelStates.asking_photo_type: ("photo", "photo_type"),
     PhotoTravelStates.asking_difficulty: ("photo", "difficulty"),
     # Budget
+    BudgetTravelStates.asking_destination: ("budget", "destination"),
     BudgetTravelStates.asking_budget: ("budget", "budget"),
     BudgetTravelStates.asking_days: ("budget", "days"),
     BudgetTravelStates.asking_included: ("budget", "included"),
     # Active
+    ActiveTravelStates.asking_destination: ("active", "destination"),
     ActiveTravelStates.asking_activity_type: ("active", "activity_type"),
     ActiveTravelStates.asking_skill_level: ("active", "skill_level"),
 }
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("destination:auto"))
+async def callback_destination_auto(callback: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик выбора автоматического подбора направления"""
+    if not callback.message or not isinstance(callback.message, Message):
+        await callback.answer("Ошибка: сообщение недоступно")
+        return
+
+    user_id = callback.from_user.id if callback.from_user else 0
+    logger.info("Пользователь %d выбрал автоматический подбор направления", user_id)
+
+    # Сохраняем выбор автоматического подбора
+    data = await state.get_data()
+    category = data.get("category")
+    if not category:
+        await callback.answer("Ошибка: категория не найдена")
+        return
+
+    try:
+        # Сохраняем ответ через use case
+        service_factory = get_service_factory()
+        process_answer_use_case = service_factory.get_process_answer_use_case()
+
+        await process_answer_use_case.execute(
+            user_id=user_id,
+            question_key="destination",
+            answer_value="auto",
+            answer_text="Направление: подобрать автоматически",
+        )
+
+        # Также сохраняем в состоянии FSM для совместимости
+        answers = data.get("answers", {})
+        answers["destination"] = {
+            "question_key": "destination",
+            "answer_value": "auto",
+            "answer_text": "Направление: подобрать автоматически",
+        }
+        await state.update_data(answers=answers)
+
+    except Exception as e:
+        logger.error("Ошибка при сохранении автоматического направления для пользователя %d: %s", user_id, str(e))
+        await callback.answer("Произошла ошибка. Попробуйте еще раз.")
+        return
+
+    # Переходим к следующему вопросу
+    questions = list(CATEGORY_QUESTIONS[category].keys())
+    next_question_key = questions[1]  # Второй вопрос после направления
+    question_data = CATEGORY_QUESTIONS[category][next_question_key]
+
+    # Устанавливаем правильное состояние для следующего вопроса
+    if category == "family":
+        await state.set_state(FamilyTravelStates.asking_family_size)
+    elif category == "pets":
+        await state.set_state(PetTravelStates.asking_pet_type)
+    elif category == "photo":
+        await state.set_state(PhotoTravelStates.asking_photo_type)
+    elif category == "budget":
+        await state.set_state(BudgetTravelStates.asking_budget)
+    elif category == "active":
+        await state.set_state(ActiveTravelStates.asking_activity_type)
+
+    current_question_num = get_current_question_number(category, next_question_key)
+    progress_text = get_progress_text(category, current_question_num)
+    full_text = f"{progress_text}\n\n{question_data['text']}"
+
+    keyboard = question_data["keyboard"](show_back=True)
+    await callback.message.edit_text(full_text, reply_markup=keyboard)
+    await callback.answer()
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("destination:manual"))
+async def callback_destination_manual(callback: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик выбора ручного ввода направления"""
+    if not callback.message or not isinstance(callback.message, Message):
+        await callback.answer("Ошибка: сообщение недоступно")
+        return
+
+    user_id = callback.from_user.id if callback.from_user else 0
+    logger.info("Пользователь %d выбрал ручной ввод направления", user_id)
+
+    # Просим пользователя ввести направление
+    await callback.message.edit_text(
+        "📍 Введите город или страну, куда хотите поехать:\n\n"
+        "Например: Париж, Франция или Бали, Индонезия"
+    )
+    await callback.answer()
+
+
+@router.message()
+async def handle_destination_input(message: Message, state: FSMContext) -> None:
+    """Обработчик ввода направления пользователем"""
+    if not message.text:
+        return
+
+    user_id = message.from_user.id if message.from_user else 0
+    current_state = await state.get_state()
+
+    # Проверяем, что пользователь находится в состоянии ввода направления
+    if not current_state or "asking_destination" not in current_state:
+        return
+
+    destination = message.text.strip()
+    logger.info("Пользователь %d ввел направление: %s", user_id, destination)
+
+    # Сохраняем направление как ответ
+    data = await state.get_data()
+    category = data.get("category")
+    if not category:
+        await message.answer("Ошибка: категория не найдена. Начните заново с /start")
+        return
+
+    try:
+        # Сохраняем ответ через use case
+        service_factory = get_service_factory()
+        process_answer_use_case = service_factory.get_process_answer_use_case()
+
+        await process_answer_use_case.execute(
+            user_id=user_id,
+            question_key="destination",
+            answer_value=destination,  # Сохраняем само направление как значение
+            answer_text=f"Направление: {destination}",
+        )
+
+        # Также сохраняем в состоянии FSM для совместимости
+        answers = data.get("answers", {})
+        answers["destination"] = {
+            "question_key": "destination",
+            "answer_value": destination,  # Сохраняем само направление
+            "answer_text": f"Направление: {destination}",
+        }
+        await state.update_data(answers=answers)
+
+    except Exception as e:
+        logger.error("Ошибка при сохранении направления для пользователя %d: %s", user_id, str(e))
+        await message.answer("Произошла ошибка при сохранении направления. Попробуйте еще раз.")
+        return
+
+    # Переходим к следующему вопросу
+    questions = list(CATEGORY_QUESTIONS[category].keys())
+    next_question_key = questions[1]  # Второй вопрос после направления
+    question_data = CATEGORY_QUESTIONS[category][next_question_key]
+
+    # Устанавливаем правильное состояние для следующего вопроса
+    if category == "family":
+        await state.set_state(FamilyTravelStates.asking_family_size)
+    elif category == "pets":
+        await state.set_state(PetTravelStates.asking_pet_type)
+    elif category == "photo":
+        await state.set_state(PhotoTravelStates.asking_photo_type)
+    elif category == "budget":
+        await state.set_state(BudgetTravelStates.asking_budget)
+    elif category == "active":
+        await state.set_state(ActiveTravelStates.asking_activity_type)
+
+    current_question_num = get_current_question_number(category, next_question_key)
+    progress_text = get_progress_text(category, current_question_num)
+    full_text = f"{progress_text}\n\n{question_data['text']}"
+
+    keyboard = question_data["keyboard"](show_back=True)
+    await message.answer(full_text, reply_markup=keyboard)
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("category:"))
@@ -168,25 +490,26 @@ async def callback_category_selected(callback: CallbackQuery, state: FSMContext)
         first_question_key = list(CATEGORY_QUESTIONS[category].keys())[0]
         question_data = CATEGORY_QUESTIONS[category][first_question_key]
 
-        # Устанавливаем состояние для первого вопроса
+        # Устанавливаем состояние для первого вопроса (направление)
         if category == "family":
-            await state.set_state(FamilyTravelStates.asking_family_size)
+            await state.set_state(FamilyTravelStates.asking_destination)
         elif category == "pets":
-            await state.set_state(PetTravelStates.asking_pet_type)
+            await state.set_state(PetTravelStates.asking_destination)
         elif category == "photo":
-            await state.set_state(PhotoTravelStates.asking_photo_type)
+            await state.set_state(PhotoTravelStates.asking_destination)
         elif category == "budget":
-            await state.set_state(BudgetTravelStates.asking_budget)
+            await state.set_state(BudgetTravelStates.asking_destination)
         elif category == "active":
-            await state.set_state(ActiveTravelStates.asking_activity_type)
+            await state.set_state(ActiveTravelStates.asking_destination)
 
         # Формируем текст с индикатором прогресса
         progress_text = get_progress_text(category, 1)
         full_text = f"{progress_text}\n\n{question_data['text']}"
 
-        # Отправляем первый вопрос
+        # Отправляем первый вопрос (для первого вопроса показываем кнопку "Главное меню")
         if callback.message and isinstance(callback.message, Message):
-            await callback.message.edit_text(full_text, reply_markup=question_data["keyboard"]())
+            keyboard = question_data["keyboard"](show_back_to_menu=True)
+            await callback.message.edit_text(full_text, reply_markup=keyboard)
 
         await callback.answer()
 
@@ -337,6 +660,15 @@ async def _save_answer(
     """Сохраняет ответ пользователя в состоянии"""
     data = await state.get_data()
     answers = data.get("answers", {})
+
+    # Проверяем, был ли уже ответ на этот вопрос
+    if question_key in answers:
+        old_value = answers[question_key].get("value", "")
+        logger.info("Перезаписываем ответ на вопрос %s: '%s' → '%s'",
+                   question_key, old_value, answer_value)
+    else:
+        logger.info("Сохраняем новый ответ на вопрос %s: '%s'", question_key, answer_value)
+
     answers[question_key] = {"value": answer_value, "text": answer_text}
     await state.update_data(answers=answers)
 
@@ -371,8 +703,12 @@ async def _show_next_question(
     progress_text = get_progress_text(category, current_question_num)
     full_text = f"{progress_text}\n\n{question_data['text']}"
 
+    # Определяем, нужно ли показывать кнопку "Назад"
+    show_back = True  # Для всех вопросов кроме первого показываем кнопку "Назад"
+
     if callback.message and isinstance(callback.message, Message):
-        await callback.message.edit_text(full_text, reply_markup=question_data["keyboard"]())
+        keyboard = question_data["keyboard"](show_back=show_back)
+        await callback.message.edit_text(full_text, reply_markup=keyboard)
 
 
 async def _handle_processing_state(

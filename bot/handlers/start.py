@@ -72,3 +72,15 @@ async def callback_main_menu(callback: CallbackQuery, state: FSMContext) -> None
         )
 
     await callback.answer()
+
+
+@router.callback_query(lambda c: c.data == "action:back")
+async def callback_back(callback: CallbackQuery, state: FSMContext) -> None:
+    """Обработчик кнопки 'Назад' - возврат к предыдущему вопросу"""
+    logger.info("Пользователь %d нажал кнопку 'Назад'", callback.from_user.id)
+
+    # Импортируем здесь, чтобы избежать циклических импортов
+    from bot.handlers.categories import handle_back_navigation
+
+    await handle_back_navigation(callback, state)
+    await callback.answer()

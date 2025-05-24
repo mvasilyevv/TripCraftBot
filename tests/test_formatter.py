@@ -176,7 +176,7 @@ def test_create_recommendation_from_json_complete(formatter: PromptFormatter) ->
         "description": "Тестовое описание",
         "highlights": ["Достопримечательность 1", "Достопримечательность 2"],
         "practical_info": "Практическая информация",
-        "estimated_cost": "$500",
+        "estimated_cost": "50 000₽",
         "duration": "5 дней",
         "best_time": "Весна",
     }
@@ -187,7 +187,7 @@ def test_create_recommendation_from_json_complete(formatter: PromptFormatter) ->
     assert recommendation.description == "Тестовое описание"
     assert recommendation.highlights == ["Достопримечательность 1", "Достопримечательность 2"]
     assert recommendation.practical_info == "Практическая информация"
-    assert recommendation.estimated_cost == "$500"
+    assert recommendation.estimated_cost == "50 000₽"
     assert recommendation.duration == "5 дней"
     assert recommendation.best_time == "Весна"
 

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RedisUserStateRepository(BaseRepository, IUserStateRepository):
     """Репозиторий состояний пользователей на основе Redis"""
 
-    def __init__(self, redis_client: Redis[bytes], ttl: int = 3600) -> None:
+    def __init__(self, redis_client: Redis, ttl: int = 3600) -> None:
         super().__init__()
         self._redis = redis_client
         self._ttl = ttl

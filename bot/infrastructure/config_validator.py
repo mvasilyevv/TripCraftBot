@@ -19,6 +19,10 @@ class TelegramConfig(BaseModel):
 
     bot_token: str = Field(..., min_length=1, description="Токен Telegram бота")
     webhook_url: str | None = Field(default=None, description="URL для webhook")
+    webhook_secret_token: str | None = Field(default=None, description="Секретный токен для webhook")
+    webhook_max_connections: int = Field(default=40, ge=1, le=100)
+    webhook_allowed_updates: list[str] | None = Field(default=None)
+    use_webhook: bool = Field(default=False, description="Использовать webhook вместо polling")
 
     @field_validator("bot_token")
     @classmethod
@@ -48,19 +52,30 @@ class TelegramConfig(BaseModel):
 
         return v
 
+    @field_validator("webhook_secret_token")
+    @classmethod
+    def validate_webhook_secret_token(cls, v: str | None) -> str | None:
+        """Валидирует секретный токен webhook"""
+        if v is None:
+            return v
+
+        if len(v) < 1 or len(v) > 256:
+            raise ValueError("Секретный токен должен быть от 1 до 256 символов")
+
+        return v
+
+
+
 
 class OpenRouterConfig(BaseModel):
     """Конфигурация OpenRouter API"""
 
-    api_key: str = Field(..., min_length=10, description="Ключ OpenRouter API")
-    base_url: str = Field(default="https://openrouter.ai/api/v1", description="Базовый URL API")
-    primary_model: str = Field(
-        default="perplexity/llama-3.1-sonar-large-128k-online",
-        description="Основная модель",
-    )
-    fallback_model: str = Field(default="anthropic/claude-3-haiku", description="Резервная модель")
-    timeout: int = Field(default=30, ge=5, le=300, description="Таймаут запроса в секундах")
-    retries: int = Field(default=2, ge=0, le=10, description="Количество повторных попыток")
+    api_key: str = Field(..., min_length=10)
+    base_url: str = Field(default="https://openrouter.ai/api/v1")
+    primary_model: str = Field(default="perplexity/llama-3.1-sonar-large-128k-online")
+    fallback_model: str = Field(default="anthropic/claude-3-haiku")
+    timeout: int = Field(default=30, ge=5, le=300)
+    retries: int = Field(default=2, ge=0, le=10)
 
     @field_validator("api_key")
     @classmethod
@@ -82,14 +97,12 @@ class OpenRouterConfig(BaseModel):
 class RedisConfig(BaseModel):
     """Конфигурация Redis"""
 
-    host: str = Field(default="localhost", description="Хост Redis")
-    port: int = Field(default=6379, ge=1, le=65535, description="Порт Redis")
-    db: int = Field(default=0, ge=0, le=15, description="Номер базы данных")
-    password: str | None = Field(default=None, description="Пароль Redis")
-    ssl: bool = Field(default=False, description="Использовать SSL")
-    fsm_ttl: int = Field(
-        default=3600, ge=300, le=86400, description="TTL для состояний FSM в секундах"
-    )
+    host: str = Field(default="localhost")
+    port: int = Field(default=6379, ge=1, le=65535)
+    db: int = Field(default=0, ge=0, le=15)
+    password: str | None = Field(default=None)
+    ssl: bool = Field(default=False)
+    fsm_ttl: int = Field(default=3600, ge=300, le=86400)
 
     @field_validator("host")
     @classmethod
@@ -103,11 +116,8 @@ class RedisConfig(BaseModel):
 class LoggingConfig(BaseModel):
     """Конфигурация логирования"""
 
-    level: str = Field(default="INFO", description="Уровень логирования")
-    format: str = Field(
-        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        description="Формат логов",
-    )
+    level: str = Field(default="INFO")
+    format: str = Field(default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     @field_validator("level")
     @classmethod
@@ -120,11 +130,14 @@ class LoggingConfig(BaseModel):
         return v_upper
 
 
+
+
+
 class AppConfig(BaseModel):
     """Общая конфигурация приложения"""
 
-    debug: bool = Field(default=False, description="Режим отладки")
-    environment: str = Field(default="production", description="Окружение")
+    debug: bool = Field(default=False)
+    environment: str = Field(default="production")
 
     @field_validator("environment")
     @classmethod

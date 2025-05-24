@@ -45,18 +45,21 @@ class TestCategoriesHandlers:
     def test_get_progress_text(self) -> None:
         """Тест формирования текста индикатора прогресса"""
         result = get_progress_text("family", 1)
-        assert result == "Вопрос 1 из 3"
+        assert result == "Вопрос 1 из 4"
 
         result = get_progress_text("photo", 2)
-        assert result == "Вопрос 2 из 2"
+        assert result == "Вопрос 2 из 3"
 
     def test_get_current_question_number(self) -> None:
         """Тест получения номера текущего вопроса"""
-        result = get_current_question_number("family", "family_size")
+        result = get_current_question_number("family", "destination")
         assert result == 1
 
-        result = get_current_question_number("family", "travel_time")
+        result = get_current_question_number("family", "family_size")
         assert result == 2
 
-        result = get_current_question_number("family", "priority")
+        result = get_current_question_number("family", "travel_time")
         assert result == 3
+
+        result = get_current_question_number("family", "priority")
+        assert result == 4
