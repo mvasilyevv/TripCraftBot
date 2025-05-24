@@ -145,6 +145,7 @@ venv.bak/
 
 # mkdocs documentation
 /site
+/docs
 
 # mypy
 .mypy_cache/
@@ -172,3 +173,22 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Telegram Bot specific
+config.ini
+.env.local
+.env.production
+
+# Redis dumps
+dump.rdb
+
+# Logs
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# IDE
+.idea/
+.vscode/
