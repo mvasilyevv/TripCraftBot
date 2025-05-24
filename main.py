@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 
+import requests
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -48,7 +49,7 @@ def get_webhook_url() -> str | None:
     """Получает webhook URL из файла или ngrok API"""
     # Сначала пытаемся прочитать из файла
     try:
-        with open("/tmp/webhook_url", "r", encoding="utf-8") as f:
+        with open("/tmp/webhook_url", encoding="utf-8") as f:
             url = f.read().strip()
             if url:
                 return url
@@ -57,7 +58,6 @@ def get_webhook_url() -> str | None:
 
     # Если файла нет, пытаемся получить из ngrok API
     try:
-        import requests
         response = requests.get("http://tripcraft-ngrok:4040/api/tunnels", timeout=5)
         if response.status_code == 200:
             data = response.json()
@@ -154,7 +154,7 @@ async def main() -> None:
             webhook_requests_handler.register(app, path="/webhook")
 
             # Добавляем health check endpoint
-            async def health_check(_request):
+            async def health_check(_request: web.Request) -> web.Response:
                 return web.json_response({"status": "ok", "bot": "TripCraftBot"})
 
             app.router.add_get("/health", health_check)
