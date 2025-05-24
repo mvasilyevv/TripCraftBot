@@ -1,0 +1,38 @@
+# Автоматическая нормализация окончаний строк
+* text=auto
+
+# Принудительно LF для shell скриптов
+*.sh text eol=lf
+
+# Принудительно LF для Python файлов
+*.py text eol=lf
+
+# Принудительно LF для конфигурационных файлов
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.env text eol=lf
+*.env.* text eol=lf
+
+# Принудительно LF для документации
+*.md text eol=lf
+*.txt text eol=lf
+*.rst text eol=lf
+
+# Принудительно LF для Docker файлов
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# Бинарные файлы
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary

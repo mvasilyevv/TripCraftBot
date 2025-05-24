@@ -13,6 +13,7 @@ from aiohttp import web
 from redis.asyncio import Redis
 
 from bot.handlers import categories, results, start
+from bot.middleware.error_handler import NetworkErrorMiddleware
 from config import DEBUG, FSM_TTL, LOG_LEVEL, TELEGRAM_BOT_TOKEN, get_redis_url
 
 
@@ -28,14 +29,29 @@ def setup_logging() -> None:
 
 
 async def create_bot() -> Bot:
-    """Создает экземпляр бота."""
-    return Bot(token=TELEGRAM_BOT_TOKEN)
+    """Создает экземпляр бота с улучшенными настройками сети."""
+    from aiogram.client.session.aiohttp import AiohttpSession
+    import aiohttp
+
+    # Создаем сессию с улучшенными настройками таймаута
+    session = AiohttpSession(
+        timeout=aiohttp.ClientTimeout(total=60, connect=10, sock_read=30)
+    )
+
+    return Bot(token=TELEGRAM_BOT_TOKEN, session=session)
 
 
 async def create_dispatcher() -> Dispatcher:
+    """Создает диспетчер с middleware для обработки ошибок."""
     redis = Redis.from_url(get_redis_url(), encoding="utf-8", decode_responses=True)
     storage = RedisStorage(redis=redis, state_ttl=FSM_TTL)
-    return Dispatcher(storage=storage)
+    dp = Dispatcher(storage=storage)
+
+    # Добавляем middleware для обработки сетевых ошибок
+    dp.message.middleware(NetworkErrorMiddleware(max_retries=3, retry_delay=1.0))
+    dp.callback_query.middleware(NetworkErrorMiddleware(max_retries=3, retry_delay=1.0))
+
+    return dp
 
 
 async def register_handlers(dp: Dispatcher) -> None:
@@ -103,11 +119,27 @@ async def setup_webhook(bot: Bot) -> str | None:
         return None
 
 
+async def validate_bot_token(bot: Bot) -> bool:
+    """Проверяет валидность токена бота."""
+    logger = logging.getLogger(__name__)
+    try:
+        bot_info = await bot.get_me()
+        logger.info("✅ Токен валиден. Бот: @%s (%s)", bot_info.username, bot_info.first_name)
+        return True
+    except Exception as e:
+        logger.error("❌ Неверный токен бота или проблемы с сетью: %s", e)
+        return False
+
+
 async def on_startup(bot: Bot) -> None:
+    """Инициализация бота при запуске."""
     logger = logging.getLogger(__name__)
     logger.info("🤖 Бот запускается...")
-    bot_info = await bot.get_me()
-    logger.info("✅ Бот @%s успешно запущен", bot_info.username)
+
+    # Проверяем токен бота
+    if not await validate_bot_token(bot):
+        logger.error("❌ Не удалось проверить токен бота")
+        sys.exit(1)
 
     if os.getenv("USE_WEBHOOK", "false").lower() == "true":
         webhook_url = await setup_webhook(bot)
@@ -120,9 +152,24 @@ async def on_startup(bot: Bot) -> None:
 
 
 async def on_shutdown(bot: Bot) -> None:
+    """Корректно останавливает бота и закрывает соединения."""
     logger = logging.getLogger(__name__)
     logger.info("Бот останавливается...")
-    await bot.session.close()
+
+    try:
+        # Удаляем webhook перед остановкой
+        await bot.delete_webhook(drop_pending_updates=True)
+        logger.info("Webhook удален")
+    except Exception as e:
+        logger.warning("Ошибка при удалении webhook: %s", e)
+
+    try:
+        # Закрываем сессию
+        await bot.session.close()
+        logger.info("Сессия бота закрыта")
+    except Exception as e:
+        logger.warning("Ошибка при закрытии сессии: %s", e)
+
     logger.info("Бот успешно остановлен")
 
 
