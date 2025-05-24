@@ -174,20 +174,28 @@ class OpenRouterClient:
                         if not openrouter_response.choices:
                             raise ExternalServiceError("Пустой ответ от OpenRouter API")
 
+                        choice = openrouter_response.choices[0]
+                        message = choice.get("message", {}) if isinstance(choice, dict) else {}
                         content: str = (
-                            openrouter_response.choices[0].get("message", {}).get("content", "")
+                            message.get("content", "") if isinstance(message, dict) else ""
                         )
                         if not content:
                             raise ExternalServiceError(
                                 "Пустое содержимое в ответе от OpenRouter API"
                             )
 
+                        # Получаем информацию об использовании токенов
+                        total_tokens = "неизвестно"
+                        if openrouter_response.usage and isinstance(
+                            openrouter_response.usage, dict
+                        ):
+                            total_tokens = openrouter_response.usage.get(
+                                "total_tokens", "неизвестно"
+                            )
                         logger.info(
                             "Успешный ответ от OpenRouter: модель=%s, токены=%s",
                             openrouter_response.model,
-                            openrouter_response.usage.get("total_tokens")
-                            if openrouter_response.usage
-                            else "неизвестно",
+                            total_tokens,
                         )
 
                         return content.strip()
