@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.domain.models import TravelCategory
-from bot.handlers.results import show_travel_recommendation
+from bot.handlers.utils import get_current_question_number, get_progress_text
 from bot.infrastructure.service_factory import get_service_factory
 from bot.keyboards.inline import (
     get_activity_type_keyboard,
@@ -26,7 +26,6 @@ from bot.keyboards.inline import (
     get_travel_time_keyboard,
 )
 from bot.states.travel import (
-    CATEGORY_QUESTIONS_COUNT,
     ActiveTravelStates,
     BudgetTravelStates,
     FamilyTravelStates,
@@ -138,18 +137,6 @@ STATE_TO_CATEGORY_QUESTION = {
     ActiveTravelStates.asking_activity_type: ("active", "activity_type"),
     ActiveTravelStates.asking_skill_level: ("active", "skill_level"),
 }
-
-
-def get_progress_text(category: str, current_question: int) -> str:
-    """Формирует текст индикатора прогресса"""
-    total_questions = CATEGORY_QUESTIONS_COUNT[category]
-    return f"Вопрос {current_question} из {total_questions}"
-
-
-def get_current_question_number(category: str, question_key: str) -> int:
-    """Получает номер текущего вопроса"""
-    questions = list(CATEGORY_QUESTIONS[category].keys())
-    return questions.index(question_key) + 1
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("category:"))
@@ -411,4 +398,7 @@ async def _handle_processing_state(
 
     # Здесь будет вызов use case для получения рекомендации
     # Пока что просто переходим к результатам (будет реализовано в handlers/results.py)
+    # Используем отложенный импорт для избежания циклических зависимостей
+    from bot.handlers.results import show_travel_recommendation
+
     await show_travel_recommendation(callback, state)
