@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +83,13 @@ class BaseAnalyticsCollector(ABC):
 
     @abstractmethod
     async def collect_metric(
-        self, metric_name: str, value: Any, tags: Optional[Dict[str, str]] = None
+        self, metric_name: str, value: Any, tags: dict[str, str] | None = None
     ) -> None:
         """Собирает метрику"""
         pass
 
     async def safe_collect(
-        self, metric_name: str, value: Any, tags: Optional[Dict[str, str]] = None
+        self, metric_name: str, value: Any, tags: dict[str, str] | None = None
     ) -> None:
         """Безопасно собирает метрику без прерывания основного потока"""
         try:
@@ -109,7 +109,7 @@ class BaseNotificationSender(ABC):
         self,
         message: str,
         level: str = "info",
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Отправляет уведомление"""
         pass
@@ -118,7 +118,7 @@ class BaseNotificationSender(ABC):
         self,
         message: str,
         level: str = "info",
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> None:
         """Безопасно отправляет уведомление"""
         try:

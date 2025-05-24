@@ -1,7 +1,7 @@
 """Интерфейсы доменного слоя"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any
 
 from .models import TravelRecommendation, TravelRequest
 
@@ -31,7 +31,7 @@ class IUserStateRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_travel_request(self, user_id: int) -> Optional[TravelRequest]:
+    async def get_travel_request(self, user_id: int) -> TravelRequest | None:
         """Получает текущий запрос пользователя"""
         pass
 
@@ -46,7 +46,7 @@ class IUserStateRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_user_progress(self, user_id: int) -> Optional[dict]:
+    async def get_user_progress(self, user_id: int) -> dict[str, Any] | None:
         """Получает прогресс пользователя"""
         pass
 
@@ -61,13 +61,13 @@ class IAnalyticsService(ABC):
 
     @abstractmethod
     async def track_recommendation_request(
-        self, category: str, destination: str, user_region: Optional[str] = None
+        self, category: str, destination: str, user_region: str | None = None
     ) -> None:
         """Отслеживает запрос рекомендации"""
         pass
 
     @abstractmethod
-    async def track_user_action(self, action: str, category: Optional[str] = None) -> None:
+    async def track_user_action(self, action: str, category: str | None = None) -> None:
         """Отслеживает действие пользователя"""
         pass
 
@@ -76,11 +76,11 @@ class INotificationService(ABC):
     """Интерфейс сервиса уведомлений"""
 
     @abstractmethod
-    async def send_error_notification(self, error: Exception, context: dict) -> None:
+    async def send_error_notification(self, error: Exception, context: dict[str, Any]) -> None:
         """Отправляет уведомление об ошибке"""
         pass
 
     @abstractmethod
-    async def send_usage_report(self, stats: dict) -> None:
+    async def send_usage_report(self, stats: dict[str, Any]) -> None:
         """Отправляет отчет об использовании"""
         pass

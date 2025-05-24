@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from redis.asyncio import Redis
 from redis.exceptions import ConnectionError, RedisError, TimeoutError
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class RedisUserStateRepository(BaseRepository, IUserStateRepository):
     """Репозиторий состояний пользователей на основе Redis"""
 
-    def __init__(self, redis_client: Redis, ttl: int = 3600) -> None:
+    def __init__(self, redis_client: Redis[bytes], ttl: int = 3600) -> None:
         super().__init__()
         self._redis = redis_client
         self._ttl = ttl
@@ -81,7 +81,7 @@ class RedisUserStateRepository(BaseRepository, IUserStateRepository):
             self.logger.error("Неожиданная ошибка при сохранении запроса: %s", str(e))
             raise ExternalServiceError(f"Внутренняя ошибка: {str(e)}") from e
 
-    async def get_travel_request(self, user_id: int) -> Optional[TravelRequest]:
+    async def get_travel_request(self, user_id: int) -> TravelRequest | None:
         """Получает текущий запрос пользователя"""
         try:
             key = self._get_travel_request_key(user_id)
@@ -190,7 +190,7 @@ class RedisUserStateRepository(BaseRepository, IUserStateRepository):
             self.logger.error("Неожиданная ошибка при сохранении прогресса: %s", str(e))
             raise ExternalServiceError(f"Внутренняя ошибка: {str(e)}") from e
 
-    async def get_user_progress(self, user_id: int) -> Optional[Dict[str, Any]]:
+    async def get_user_progress(self, user_id: int) -> dict[str, Any] | None:
         """Получает прогресс пользователя"""
         try:
             key = self._get_user_progress_key(user_id)
@@ -205,7 +205,7 @@ class RedisUserStateRepository(BaseRepository, IUserStateRepository):
                 self.logger.debug("Прогресс пользователя %d не найден", user_id)
                 return None
 
-            data = json.loads(json_data)
+            data: dict[str, Any] = json.loads(json_data)
             self.logger.debug("Прогресс пользователя %d получен", user_id)
             return data
 

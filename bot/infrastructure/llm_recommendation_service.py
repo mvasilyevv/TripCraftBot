@@ -1,7 +1,6 @@
 """Реализация сервиса рекомендаций с использованием LLM"""
 
 import logging
-from typing import List, Optional
 
 from bot.domain.interfaces import ITravelRecommendationService
 from bot.domain.models import ExternalServiceError, TravelRecommendation, TravelRequest
@@ -17,7 +16,7 @@ class LLMTravelRecommendationService(ITravelRecommendationService):
     def __init__(
         self,
         openrouter_client: OpenRouterClient,
-        prompt_formatter: Optional[PromptFormatter] = None,
+        prompt_formatter: PromptFormatter | None = None,
     ) -> None:
         """
         Инициализирует сервис рекомендаций
@@ -29,7 +28,7 @@ class LLMTravelRecommendationService(ITravelRecommendationService):
         """
         self._client = openrouter_client
         self._formatter = prompt_formatter or PromptFormatter()
-        self._excluded_destinations: List[str] = []
+        self._excluded_destinations: list[str] = []
 
     async def get_recommendation(self, request: TravelRequest) -> TravelRecommendation:
         """
@@ -85,7 +84,7 @@ class LLMTravelRecommendationService(ITravelRecommendationService):
             raise ExternalServiceError(f"Ошибка сервиса рекомендаций: {str(e)}") from e
 
     async def get_alternative_recommendation(
-        self, request: TravelRequest, exclude_destinations: List[str]
+        self, request: TravelRequest, exclude_destinations: list[str]
     ) -> TravelRecommendation:
         """
         Получает альтернативную рекомендацию, исключая указанные направления

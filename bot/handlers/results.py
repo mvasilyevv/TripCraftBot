@@ -46,7 +46,7 @@ async def show_travel_recommendation(callback: CallbackQuery, _: FSMContext) -> 
 
     except InvalidTravelRequestError:
         logger.error("Запрос пользователя %d не найден", user_id)
-        error_text = "❌ Не удалось найти ваш запрос.\n\n" "Пожалуйста, начните новый поиск."
+        error_text = "❌ Не удалось найти ваш запрос.\n\nПожалуйста, начните новый поиск."
         if callback.message and isinstance(callback.message, Message):
             await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
 
@@ -91,7 +91,7 @@ async def show_travel_recommendation(callback: CallbackQuery, _: FSMContext) -> 
             "Неожиданная ошибка при получении рекомендации для пользователя %d: %s", user_id, str(e)
         )
         error_text = (
-            "❌ Произошла неожиданная ошибка.\n\n" "Пожалуйста, попробуйте начать новый поиск."
+            "❌ Произошла неожиданная ошибка.\n\nПожалуйста, попробуйте начать новый поиск."
         )
         if callback.message and isinstance(callback.message, Message):
             await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
@@ -111,7 +111,7 @@ async def callback_retry_search(callback: CallbackQuery, state: FSMContext) -> N
     # Показываем сообщение о поиске альтернативы
     if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "🔄 Ищу альтернативный вариант...\n\n" "Это может занять несколько секунд."
+            "🔄 Ищу альтернативный вариант...\n\nЭто может занять несколько секунд."
         )
 
     try:
@@ -147,7 +147,7 @@ async def callback_retry_search(callback: CallbackQuery, state: FSMContext) -> N
 
     except InvalidTravelRequestError:
         logger.error("Запрос пользователя %d не найден для альтернативы", user_id)
-        error_text = "❌ Не удалось найти ваш запрос.\n\n" "Пожалуйста, начните новый поиск."
+        error_text = "❌ Не удалось найти ваш запрос.\n\nПожалуйста, начните новый поиск."
         if callback.message and isinstance(callback.message, Message):
             await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
 
@@ -193,7 +193,7 @@ async def callback_retry_search(callback: CallbackQuery, state: FSMContext) -> N
             "Неожиданная ошибка при поиске альтернативы для пользователя %d: %s", user_id, str(e)
         )
         error_text = (
-            "❌ Произошла неожиданная ошибка.\n\n" "Пожалуйста, попробуйте начать новый поиск."
+            "❌ Произошла неожиданная ошибка.\n\nПожалуйста, попробуйте начать новый поиск."
         )
         if callback.message and isinstance(callback.message, Message):
             await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())

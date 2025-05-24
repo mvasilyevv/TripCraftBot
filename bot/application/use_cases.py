@@ -1,7 +1,6 @@
 """Use cases для TripCraftBot"""
 
 import logging
-from typing import Optional
 
 from bot.domain.interfaces import (
     IAnalyticsService,
@@ -127,7 +126,7 @@ class GetAlternativeRecommendationUseCase:
         self._analytics_service = analytics_service
 
     async def execute(
-        self, user_id: int, exclude_destinations: Optional[list[str]] = None
+        self, user_id: int, exclude_destinations: list[str] | None = None
     ) -> TravelRecommendation:
         """Получает альтернативную рекомендацию для пользователя"""
         logger.info("Получение альтернативной рекомендации для пользователя %d", user_id)

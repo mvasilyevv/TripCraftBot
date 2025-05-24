@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
 
 
 class TravelCategory(Enum):
@@ -30,14 +29,14 @@ class TravelRequest:
 
     user_id: int
     category: TravelCategory
-    answers: Dict[str, UserAnswer]
-    created_at: Optional[str] = None
+    answers: dict[str, UserAnswer]
+    created_at: str | None = None
 
     def add_answer(self, question_key: str, answer_value: str, answer_text: str) -> None:
         """Добавляет ответ пользователя"""
         self.answers[question_key] = UserAnswer(question_key, answer_value, answer_text)
 
-    def get_answer(self, question_key: str) -> Optional[UserAnswer]:
+    def get_answer(self, question_key: str) -> UserAnswer | None:
         """Получает ответ пользователя по ключу"""
         return self.answers.get(question_key)
 
@@ -54,9 +53,9 @@ class TravelRecommendation:
     description: str
     highlights: list[str]
     practical_info: str
-    estimated_cost: Optional[str] = None
-    duration: Optional[str] = None
-    best_time: Optional[str] = None
+    estimated_cost: str | None = None
+    duration: str | None = None
+    best_time: str | None = None
 
     def format_for_telegram(self) -> str:
         """Форматирует рекомендацию для отправки в Telegram"""

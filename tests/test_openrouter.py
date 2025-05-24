@@ -1,6 +1,6 @@
 """Тесты для OpenRouter клиента"""
 
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -24,7 +24,7 @@ def openrouter_client() -> OpenRouterClient:
 
 
 @pytest.fixture
-def mock_response() -> Dict[str, Any]:
+def mock_response() -> dict[str, Any]:
     """Фикстура для мокового ответа от API"""
     return {
         "id": "test-response-id",
@@ -36,7 +36,7 @@ def mock_response() -> Dict[str, Any]:
 
 @pytest.mark.asyncio
 async def test_generate_completion_success(
-    openrouter_client: OpenRouterClient, mock_response: Dict[str, Any]
+    openrouter_client: OpenRouterClient, mock_response: dict[str, Any]
 ) -> None:
     """Тест успешной генерации ответа"""
     messages = [OpenRouterMessage(role="user", content="Тестовое сообщение")]
@@ -58,7 +58,7 @@ async def test_generate_completion_success(
 
 @pytest.mark.asyncio
 async def test_generate_completion_fallback_model(
-    openrouter_client: OpenRouterClient, mock_response: Dict[str, Any]
+    openrouter_client: OpenRouterClient, mock_response: dict[str, Any]
 ) -> None:
     """Тест переключения на fallback модель при ошибке основной"""
     messages = [OpenRouterMessage(role="user", content="Тестовое сообщение")]
@@ -90,14 +90,15 @@ async def test_generate_completion_fallback_model(
 
 @pytest.mark.asyncio
 async def test_generate_completion_rate_limit_retry(
-    openrouter_client: OpenRouterClient, mock_response: Dict[str, Any]
+    openrouter_client: OpenRouterClient, mock_response: dict[str, Any]
 ) -> None:
     """Тест повторной попытки при rate limit"""
     messages = [OpenRouterMessage(role="user", content="Тестовое сообщение")]
 
-    with patch("httpx.AsyncClient") as mock_client, patch(
-        "asyncio.sleep", new_callable=AsyncMock
-    ) as mock_sleep:
+    with (
+        patch("httpx.AsyncClient") as mock_client,
+        patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep,
+    ):
         # Первый вызов - rate limit
         rate_limit_response = MagicMock()
         rate_limit_response.status_code = 429

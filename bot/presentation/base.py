@@ -1,8 +1,8 @@
 """Базовые классы для обработчиков Telegram событий"""
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from abc import abstractmethod
+from typing import Any
 
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -12,14 +12,14 @@ from bot.domain.models import TravelPlannerError
 logger = logging.getLogger(__name__)
 
 
-class BaseHandler(ABC):
+class BaseHandler:
     """Базовый класс для обработчиков событий"""
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     async def safe_execute(
-        self, handler_func: Any, event: Union[Message, CallbackQuery], *args: Any, **kwargs: Any
+        self, handler_func: Any, event: Message | CallbackQuery, *args: Any, **kwargs: Any
     ) -> Any:
         """Безопасно выполняет обработчик с обработкой ошибок"""
         try:
@@ -32,7 +32,7 @@ class BaseHandler(ABC):
             await self._handle_unexpected_error(event, e)
 
     async def _handle_business_error(
-        self, event: Union[Message, CallbackQuery], error: TravelPlannerError
+        self, event: Message | CallbackQuery, error: TravelPlannerError
     ) -> None:
         """Обрабатывает бизнес-ошибки"""
         error_message = "Произошла ошибка при обработке запроса. Попробуйте еще раз."
@@ -43,7 +43,7 @@ class BaseHandler(ABC):
             await event.answer(error_message, show_alert=True)
 
     async def _handle_unexpected_error(
-        self, event: Union[Message, CallbackQuery], error: Exception
+        self, event: Message | CallbackQuery, error: Exception
     ) -> None:
         """Обрабатывает неожиданные ошибки"""
         error_message = "Произошла техническая ошибка. Мы уже работаем над ее устранением."
@@ -102,7 +102,7 @@ class BaseStatefulHandler(BaseHandler):
         """Сохраняет данные пользователя в состояние"""
         await state.update_data({key: value})
 
-    async def clear_user_data(self, state: FSMContext, keys: Optional[list[str]] = None) -> None:
+    async def clear_user_data(self, state: FSMContext, keys: list[str] | None = None) -> None:
         """Очищает данные пользователя"""
         if keys:
             data = await state.get_data()
@@ -121,8 +121,8 @@ class HandlerRegistry:
     """Реестр обработчиков для регистрации в диспетчере"""
 
     def __init__(self) -> None:
-        self._message_handlers: list[tuple] = []
-        self._callback_handlers: list[tuple] = []
+        self._message_handlers: list[tuple[Any, ...]] = []
+        self._callback_handlers: list[tuple[Any, ...]] = []
 
     def register_message_handler(
         self, handler: BaseMessageHandler, *filters: Any, **kwargs: Any
@@ -136,10 +136,10 @@ class HandlerRegistry:
         """Регистрирует обработчик callback запросов"""
         self._callback_handlers.append((handler, filters, kwargs))
 
-    def get_message_handlers(self) -> list[tuple]:
+    def get_message_handlers(self) -> list[tuple[Any, ...]]:
         """Возвращает зарегистрированные обработчики сообщений"""
         return self._message_handlers.copy()
 
-    def get_callback_handlers(self) -> list[tuple]:
+    def get_callback_handlers(self) -> list[tuple[Any, ...]]:
         """Возвращает зарегистрированные обработчики callback запросов"""
         return self._callback_handlers.copy()

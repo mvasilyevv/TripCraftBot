@@ -1,7 +1,6 @@
 """Валидация конфигурации с использованием Pydantic"""
 
 import logging
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -19,7 +18,7 @@ class TelegramConfig(BaseModel):
     """Конфигурация Telegram бота"""
 
     bot_token: str = Field(..., min_length=1, description="Токен Telegram бота")
-    webhook_url: Optional[str] = Field(default=None, description="URL для webhook")
+    webhook_url: str | None = Field(default=None, description="URL для webhook")
 
     @field_validator("bot_token")
     @classmethod
@@ -39,7 +38,7 @@ class TelegramConfig(BaseModel):
 
     @field_validator("webhook_url")
     @classmethod
-    def validate_webhook_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_webhook_url(cls, v: str | None) -> str | None:
         """Валидирует URL webhook"""
         if v is None:
             return v
@@ -86,7 +85,7 @@ class RedisConfig(BaseModel):
     host: str = Field(default="localhost", description="Хост Redis")
     port: int = Field(default=6379, ge=1, le=65535, description="Порт Redis")
     db: int = Field(default=0, ge=0, le=15, description="Номер базы данных")
-    password: Optional[str] = Field(default=None, description="Пароль Redis")
+    password: str | None = Field(default=None, description="Пароль Redis")
     ssl: bool = Field(default=False, description="Использовать SSL")
     fsm_ttl: int = Field(
         default=3600, ge=300, le=86400, description="TTL для состояний FSM в секундах"

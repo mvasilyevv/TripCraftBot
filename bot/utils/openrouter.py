@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, Field
@@ -24,10 +24,10 @@ class OpenRouterRequest(BaseModel):
     """Запрос к OpenRouter API"""
 
     model: str = Field(..., description="Модель для использования")
-    messages: List[OpenRouterMessage] = Field(..., description="Список сообщений")
-    max_tokens: Optional[int] = Field(default=2000, description="Максимальное количество токенов")
-    temperature: Optional[float] = Field(default=0.7, description="Температура генерации")
-    top_p: Optional[float] = Field(default=0.9, description="Top-p параметр")
+    messages: list[OpenRouterMessage] = Field(..., description="Список сообщений")
+    max_tokens: int | None = Field(default=2000, description="Максимальное количество токенов")
+    temperature: float | None = Field(default=0.7, description="Температура генерации")
+    top_p: float | None = Field(default=0.9, description="Top-p параметр")
 
 
 class OpenRouterResponse(BaseModel):
@@ -35,8 +35,8 @@ class OpenRouterResponse(BaseModel):
 
     id: str = Field(..., description="ID ответа")
     model: str = Field(..., description="Использованная модель")
-    choices: List[Dict[str, Any]] = Field(..., description="Варианты ответов")
-    usage: Optional[Dict[str, Any]] = Field(default=None, description="Информация об использовании")
+    choices: list[dict[str, Any]] = Field(..., description="Варианты ответов")
+    usage: dict[str, Any] | None = Field(default=None, description="Информация об использовании")
 
 
 class OpenRouterClient:
@@ -78,8 +78,8 @@ class OpenRouterClient:
 
     async def generate_completion(
         self,
-        messages: List[OpenRouterMessage],
-        model: Optional[str] = None,
+        messages: list[OpenRouterMessage],
+        model: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
     ) -> str:
@@ -174,7 +174,7 @@ class OpenRouterClient:
                         if not openrouter_response.choices:
                             raise ExternalServiceError("Пустой ответ от OpenRouter API")
 
-                        content = (
+                        content: str = (
                             openrouter_response.choices[0].get("message", {}).get("content", "")
                         )
                         if not content:
@@ -235,7 +235,7 @@ class OpenRouterClient:
                 if attempt < self._retries:
                     await asyncio.sleep(1)
                     continue
-                raise ExternalServiceError("Таймаут запроса к OpenRouter API")
+                raise ExternalServiceError("Таймаут запроса к OpenRouter API") from None
 
             except httpx.RequestError as e:
                 logger.warning(

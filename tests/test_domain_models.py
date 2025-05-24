@@ -1,6 +1,5 @@
 """Тесты для доменных моделей"""
 
-
 from bot.domain.constants import REQUIRED_QUESTIONS
 from bot.domain.models import TravelCategory, TravelRecommendation, TravelRequest
 

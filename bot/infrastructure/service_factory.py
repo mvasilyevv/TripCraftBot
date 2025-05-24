@@ -1,7 +1,6 @@
 """Фабрика для создания сервисов"""
 
 import logging
-from typing import Optional
 
 from redis.asyncio import Redis
 
@@ -29,7 +28,7 @@ class MockAnalyticsService(IAnalyticsService):
         logger.info("Аналитика: использование категории %s", category)
 
     async def track_recommendation_request(
-        self, category: str, destination: str, user_region: Optional[str] = None
+        self, category: str, destination: str, user_region: str | None = None
     ) -> None:
         """Отслеживает запрос рекомендации"""
         logger.info(
@@ -39,7 +38,7 @@ class MockAnalyticsService(IAnalyticsService):
             user_region,
         )
 
-    async def track_user_action(self, action: str, category: Optional[str] = None) -> None:
+    async def track_user_action(self, action: str, category: str | None = None) -> None:
         """Отслеживает действие пользователя"""
         logger.info("Аналитика: действие пользователя %s, категория=%s", action, category)
 
@@ -50,11 +49,11 @@ class ServiceFactory:
     def __init__(self) -> None:
         """Инициализирует фабрику сервисов"""
         self._config = get_config()
-        self._openrouter_client: Optional[OpenRouterClient] = None
-        self._recommendation_service: Optional[LLMTravelRecommendationService] = None
-        self._state_repository: Optional[IUserStateRepository] = None
-        self._analytics_service: Optional[IAnalyticsService] = None
-        self._prompt_formatter: Optional[PromptFormatter] = None
+        self._openrouter_client: OpenRouterClient | None = None
+        self._recommendation_service: LLMTravelRecommendationService | None = None
+        self._state_repository: IUserStateRepository | None = None
+        self._analytics_service: IAnalyticsService | None = None
+        self._prompt_formatter: PromptFormatter | None = None
 
     def get_openrouter_client(self) -> OpenRouterClient:
         """Возвращает клиент OpenRouter API"""
@@ -92,7 +91,7 @@ class ServiceFactory:
             redis_client = Redis.from_url(
                 self._config.get_redis_url(),
                 encoding="utf-8",
-                decode_responses=True,
+                decode_responses=False,
             )
             self._state_repository = RedisUserStateRepository(
                 redis_client=redis_client,
@@ -138,7 +137,7 @@ class ServiceFactory:
 
 
 # Глобальный экземпляр фабрики
-_service_factory: Optional[ServiceFactory] = None
+_service_factory: ServiceFactory | None = None
 
 
 def get_service_factory() -> ServiceFactory:

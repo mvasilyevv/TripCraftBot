@@ -3,7 +3,7 @@
 import json
 import logging
 import re
-from typing import Dict, List
+from typing import Any
 
 from bot.domain.models import TravelCategory, TravelRecommendation, TravelRequest
 from bot.utils.openrouter import OpenRouterMessage
@@ -19,7 +19,7 @@ class PromptFormatter:
         self._base_system_prompt = self._get_base_system_prompt()
         self._category_prompts = self._get_category_specific_prompts()
 
-    def format_travel_request_prompt(self, request: TravelRequest) -> List[OpenRouterMessage]:
+    def format_travel_request_prompt(self, request: TravelRequest) -> list[OpenRouterMessage]:
         """
         Форматирует запрос пользователя в промпт для LLM
 
@@ -104,7 +104,7 @@ class PromptFormatter:
 
 Если JSON формат невозможен, структурируй ответ четко с заголовками."""
 
-    def _get_category_specific_prompts(self) -> Dict[TravelCategory, str]:
+    def _get_category_specific_prompts(self) -> dict[TravelCategory, str]:
         """Возвращает специфичные промпты для каждой категории"""
         return {
             TravelCategory.FAMILY: """
@@ -163,14 +163,14 @@ class PromptFormatter:
 
         prompt = f"Помоги спланировать {category_name}. Вот мои предпочтения:\n\n"
 
-        for question_key, answer in request.answers.items():
+        for _question_key, answer in request.answers.items():
             prompt += f"• {answer.answer_text}\n"
 
         prompt += "\nПожалуйста, предложи конкретное место для путешествия с подробной информацией."
 
         return prompt
 
-    def _create_recommendation_from_json(self, data: Dict) -> TravelRecommendation:
+    def _create_recommendation_from_json(self, data: dict[str, Any]) -> TravelRecommendation:
         """Создает рекомендацию из JSON данных"""
         return TravelRecommendation(
             destination=data.get("destination", "Неизвестное место"),

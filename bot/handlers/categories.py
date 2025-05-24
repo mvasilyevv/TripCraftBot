@@ -1,7 +1,7 @@
 """Обработчики категорий путешествий"""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 router = Router()
 
 # Маппинг вопросов для каждой категории
-CATEGORY_QUESTIONS: Dict[str, Dict[str, Dict[str, Any]]] = {
+CATEGORY_QUESTIONS: dict[str, dict[str, dict[str, Any]]] = {
     "family": {
         "family_size": {
             "text": "Сколько человек будет путешествовать?",
@@ -355,7 +355,11 @@ async def _handle_next_step(
 
 
 async def _show_next_question(
-    callback: CallbackQuery, state: FSMContext, category: str, questions: list, current_index: int
+    callback: CallbackQuery,
+    state: FSMContext,
+    category: str,
+    questions: list[str],
+    current_index: int,
 ) -> None:
     """Показывает следующий вопрос"""
     next_question_key = questions[current_index + 1]
@@ -392,8 +396,7 @@ async def _handle_processing_state(
     # Показываем сообщение о поиске
     if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "🔍 Ищу идеальное место для вашего путешествия...\n\n"
-            "Это может занять несколько секунд."
+            "🔍 Ищу идеальное место для вашего путешествия...\n\nЭто может занять несколько секунд."
         )
 
     # Здесь будет вызов use case для получения рекомендации

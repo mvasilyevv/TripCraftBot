@@ -1,11 +1,9 @@
 """Константы доменного слоя"""
 
-from typing import Dict, List
-
 from .models import TravelCategory
 
 # Маппинг категорий на их отображаемые названия
-CATEGORY_NAMES: Dict[TravelCategory, str] = {
+CATEGORY_NAMES: dict[TravelCategory, str] = {
     TravelCategory.FAMILY: "🏖 Семейное путешествие",
     TravelCategory.PETS: "🐾 Путешествие с питомцами",
     TravelCategory.PHOTO: "📸 Лучшие места для фото",
@@ -14,7 +12,7 @@ CATEGORY_NAMES: Dict[TravelCategory, str] = {
 }
 
 # Обязательные вопросы для каждой категории
-REQUIRED_QUESTIONS: Dict[TravelCategory, List[str]] = {
+REQUIRED_QUESTIONS: dict[TravelCategory, list[str]] = {
     TravelCategory.FAMILY: ["family_size", "travel_time", "priority"],
     TravelCategory.PETS: ["pet_type", "transport", "duration"],
     TravelCategory.PHOTO: ["photo_type", "difficulty"],
@@ -23,7 +21,7 @@ REQUIRED_QUESTIONS: Dict[TravelCategory, List[str]] = {
 }
 
 # Количество вопросов для каждой категории
-QUESTIONS_COUNT: Dict[TravelCategory, int] = {
+QUESTIONS_COUNT: dict[TravelCategory, int] = {
     TravelCategory.FAMILY: 3,
     TravelCategory.PETS: 3,
     TravelCategory.PHOTO: 2,
