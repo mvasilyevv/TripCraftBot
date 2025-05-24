@@ -6,34 +6,95 @@ from aiogram import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
-from bot.keyboards.inline import get_result_actions_keyboard, get_new_search_keyboard
+from bot.domain.models import ExternalServiceError, InvalidTravelRequestError
+from bot.infrastructure.service_factory import get_service_factory
+from bot.keyboards.inline import get_new_search_keyboard, get_result_actions_keyboard
 
 logger = logging.getLogger(__name__)
 
 router = Router()
 
 
-async def show_travel_recommendation(
-    callback: CallbackQuery, state: FSMContext
-) -> None:
+async def show_travel_recommendation(callback: CallbackQuery, _: FSMContext) -> None:
     """Показывает рекомендацию путешествия пользователю"""
     logger.info("Показ рекомендации пользователю %d", callback.from_user.id)
 
-    # Получаем данные из состояния
-    data = await state.get_data()
-    category = data.get("category", "family")  # Значение по умолчанию
-    answers = data.get("answers", {})
+    if not callback.from_user:
+        logger.error("Отсутствует информация о пользователе в callback")
+        return
 
-    # Пока что показываем заглушку (в будущем здесь будет вызов use case)
-    recommendation_text = _create_mock_recommendation(category, answers)
+    user_id = callback.from_user.id
 
-    # Отправляем рекомендацию с кнопками действий
-    if callback.message and isinstance(callback.message, Message):
-        await callback.message.edit_text(
-            recommendation_text,
-            reply_markup=get_result_actions_keyboard(),
-            parse_mode="Markdown"
+    try:
+        # Получаем use case для рекомендаций
+        service_factory = get_service_factory()
+        recommendation_use_case = service_factory.get_travel_recommendation_use_case()
+
+        # Получаем рекомендацию
+        recommendation = await recommendation_use_case.execute(user_id)
+
+        # Форматируем рекомендацию для Telegram
+        recommendation_text = recommendation.format_for_telegram()
+
+        # Отправляем рекомендацию с кнопками действий
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(
+                recommendation_text,
+                reply_markup=get_result_actions_keyboard(),
+                parse_mode="Markdown",
+            )
+
+    except InvalidTravelRequestError:
+        logger.error("Запрос пользователя %d не найден", user_id)
+        error_text = "❌ Не удалось найти ваш запрос.\n\n" "Пожалуйста, начните новый поиск."
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
+
+    except ExternalServiceError as e:
+        logger.error("Ошибка внешнего сервиса для пользователя %d: %s", user_id, str(e))
+
+        # Пытаемся получить fallback рекомендацию
+        try:
+            service_factory = get_service_factory()
+            recommendation_service = service_factory.get_recommendation_service()
+            state_repository = service_factory.get_state_repository()
+
+            # Получаем запрос пользователя для fallback
+            request = await state_repository.get_travel_request(user_id)
+            if request:
+                fallback_recommendation = recommendation_service.get_fallback_recommendation(
+                    request
+                )
+                recommendation_text = fallback_recommendation.format_for_telegram()
+                recommendation_text += "\n\n⚠️ *Рекомендация сгенерирована в автономном режиме*"
+
+                if callback.message and isinstance(callback.message, Message):
+                    await callback.message.edit_text(
+                        recommendation_text,
+                        reply_markup=get_result_actions_keyboard(),
+                        parse_mode="Markdown",
+                    )
+                return
+        except Exception as fallback_error:
+            logger.error("Ошибка fallback рекомендации: %s", str(fallback_error))
+
+        # Если fallback тоже не сработал
+        error_text = (
+            "❌ Временные проблемы с сервисом рекомендаций.\n\n"
+            "Попробуйте повторить запрос через несколько минут."
         )
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
+
+    except Exception as e:
+        logger.error(
+            "Неожиданная ошибка при получении рекомендации для пользователя %d: %s", user_id, str(e)
+        )
+        error_text = (
+            "❌ Произошла неожиданная ошибка.\n\n" "Пожалуйста, попробуйте начать новый поиск."
+        )
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
 
 
 @router.callback_query(lambda c: c.data == "action:retry")
@@ -41,32 +102,101 @@ async def callback_retry_search(callback: CallbackQuery, state: FSMContext) -> N
     """Обработчик кнопки 'Другой вариант'"""
     logger.info("Пользователь %d запросил другой вариант", callback.from_user.id)
 
-    # Получаем данные из состояния
-    data = await state.get_data()
-    category = data.get("category", "family")  # Значение по умолчанию
-    answers = data.get("answers", {})
+    if not callback.from_user:
+        logger.error("Отсутствует информация о пользователе в callback")
+        return
+
+    user_id = callback.from_user.id
 
     # Показываем сообщение о поиске альтернативы
     if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "🔄 Ищу альтернативный вариант...\n\n"
-            "Это может занять несколько секунд."
+            "🔄 Ищу альтернативный вариант...\n\n" "Это может занять несколько секунд."
         )
 
-    # Пока что показываем другую заглушку
-    alternative_recommendation = _create_mock_alternative_recommendation(
-        category, answers
-    )
+    try:
+        # Получаем use case для альтернативных рекомендаций
+        service_factory = get_service_factory()
+        alternative_use_case = service_factory.get_alternative_recommendation_use_case()
 
-    # Отправляем альтернативную рекомендацию
-    if callback.message and isinstance(callback.message, Message):
-        await callback.message.edit_text(
-            alternative_recommendation,
-            reply_markup=get_result_actions_keyboard(),
-            parse_mode="Markdown"
+        # Получаем данные из состояния для исключений
+        data = await state.get_data()
+        exclude_destinations = data.get("previous_destinations", [])
+
+        # Получаем альтернативную рекомендацию
+        recommendation = await alternative_use_case.execute(user_id, exclude_destinations)
+
+        # Сохраняем новое направление в исключения
+        if "previous_destinations" not in data:
+            data["previous_destinations"] = []
+        data["previous_destinations"].append(recommendation.destination)
+        await state.update_data(previous_destinations=data["previous_destinations"])
+
+        # Форматируем рекомендацию для Telegram
+        recommendation_text = recommendation.format_for_telegram()
+
+        # Отправляем альтернативную рекомендацию
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(
+                recommendation_text,
+                reply_markup=get_result_actions_keyboard(),
+                parse_mode="Markdown",
+            )
+
+        await callback.answer("Найден альтернативный вариант!")
+
+    except InvalidTravelRequestError:
+        logger.error("Запрос пользователя %d не найден для альтернативы", user_id)
+        error_text = "❌ Не удалось найти ваш запрос.\n\n" "Пожалуйста, начните новый поиск."
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
+
+    except ExternalServiceError as e:
+        logger.error(
+            "Ошибка сервиса при поиске альтернативы для пользователя %d: %s", user_id, str(e)
         )
 
-    await callback.answer("Найден альтернативный вариант!")
+        # Пытаемся получить fallback рекомендацию
+        try:
+            service_factory = get_service_factory()
+            recommendation_service = service_factory.get_recommendation_service()
+            state_repository = service_factory.get_state_repository()
+
+            request = await state_repository.get_travel_request(user_id)
+            if request:
+                fallback_recommendation = recommendation_service.get_fallback_recommendation(
+                    request
+                )
+                recommendation_text = fallback_recommendation.format_for_telegram()
+                recommendation_text += "\n\n⚠️ *Альтернатива сгенерирована в автономном режиме*"
+
+                if callback.message and isinstance(callback.message, Message):
+                    await callback.message.edit_text(
+                        recommendation_text,
+                        reply_markup=get_result_actions_keyboard(),
+                        parse_mode="Markdown",
+                    )
+                await callback.answer("Найден альтернативный вариант!")
+                return
+        except Exception as fallback_error:
+            logger.error("Ошибка fallback альтернативы: %s", str(fallback_error))
+
+        error_text = (
+            "❌ Временные проблемы с поиском альтернатив.\n\n"
+            "Попробуйте повторить запрос через несколько минут."
+        )
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
+
+    except Exception as e:
+        logger.error(
+            "Неожиданная ошибка при поиске альтернативы для пользователя %d: %s", user_id, str(e)
+        )
+        error_text = (
+            "❌ Произошла неожиданная ошибка.\n\n" "Пожалуйста, попробуйте начать новый поиск."
+        )
+        if callback.message and isinstance(callback.message, Message):
+            await callback.message.edit_text(error_text, reply_markup=get_new_search_keyboard())
 
 
 @router.callback_query(lambda c: c.data == "action:share")
@@ -76,136 +206,18 @@ async def callback_share_result(callback: CallbackQuery, _: FSMContext) -> None:
 
     # Получаем текущий текст сообщения
     current_text = ""
-    if (callback.message and
-        isinstance(callback.message, Message) and
-        callback.message.text):
+    if callback.message and isinstance(callback.message, Message) and callback.message.text:
         current_text = callback.message.text
-    elif (callback.message and
-          isinstance(callback.message, Message) and
-          callback.message.caption):
+    elif callback.message and isinstance(callback.message, Message) and callback.message.caption:
         current_text = callback.message.caption
 
     # Добавляем информацию о боте в конец
-    share_text = f"{current_text}\n\n🤖 Найдено с помощью @TraveleBot"
+    share_text = f"{current_text}\n\n🤖 Найдено с помощью @TripCraftBot"
 
     # Отправляем новое сообщение для пересылки
     if callback.message and isinstance(callback.message, Message):
         await callback.message.answer(
-            share_text,
-            reply_markup=get_new_search_keyboard(),
-            parse_mode="Markdown"
+            share_text, reply_markup=get_new_search_keyboard(), parse_mode="Markdown"
         )
 
     await callback.answer("Сообщение готово для пересылки!")
-
-
-def _create_mock_recommendation(category: str, _: dict) -> str:
-    """Создает заглушку рекомендации на основе категории и ответов"""
-
-    # Базовые рекомендации для каждой категории
-    mock_recommendations = {
-        "family": {
-            "destination": "Анталья, Турция",
-            "description": "Идеальное место для семейного отдыха с детьми",
-            "highlights": [
-                "Аквапарки и детские развлечения",
-                "Чистые пляжи с пологим входом",
-                "Отели с детской анимацией"
-            ],
-            "practical_info": "Виза не нужна, прямые рейсы из Москвы 3.5 часа",
-            "cost": "$800-1200 на семью",
-            "duration": "7-10 дней"
-        },
-        "pets": {
-            "destination": "Сочи, Россия",
-            "description": (
-                "Pet-friendly курорт с множеством отелей, принимающих животных"
-            ),
-            "highlights": [
-                "Специальные пляжи для собак",
-                "Ветеринарные клиники",
-                "Парки для прогулок с питомцами"
-            ],
-            "practical_info": "Документы на животное, переноска для транспорта",
-            "cost": "$400-600",
-            "duration": "5-7 дней"
-        },
-        "photo": {
-            "destination": "Каппадокия, Турция",
-            "description": "Уникальные пейзажи для незабываемых фотографий",
-            "highlights": [
-                "Полеты на воздушных шарах",
-                "Подземные города",
-                "Сказочные дымоходы"
-            ],
-            "practical_info": "Лучшее время: апрель-май, сентябрь-октябрь",
-            "cost": "$600-900",
-            "duration": "4-5 дней"
-        },
-        "budget": {
-            "destination": "Грузия (Тбилиси + Батуми)",
-            "description": "Максимум впечатлений при минимальном бюджете",
-            "highlights": [
-                "Бесплатные экскурсии по старому городу",
-                "Недорогая и вкусная еда",
-                "Доступное жилье"
-            ],
-            "practical_info": "Виза не нужна, можно добраться автобусом",
-            "cost": "$200-400",
-            "duration": "5-7 дней"
-        },
-        "active": {
-            "destination": "Красная Поляна, Сочи",
-            "description": "Горные приключения и активный отдых",
-            "highlights": [
-                "Треккинг в горах",
-                "Канатные дороги",
-                "Экстремальные виды спорта"
-            ],
-            "practical_info": "Сезон: май-октябрь, нужна спортивная экипировка",
-            "cost": "$500-800",
-            "duration": "4-6 дней"
-        }
-    }
-
-    rec = mock_recommendations.get(category, mock_recommendations["family"])
-
-    text = f"🌍 **{rec['destination']}**\n\n"
-    text += f"{rec['description']}\n\n"
-    text += "✨ **Основные достопримечательности:**\n"
-    for highlight in rec['highlights']:
-        text += f"• {highlight}\n"
-    text += f"\n📋 **Практическая информация:**\n{rec['practical_info']}\n\n"
-    text += f"💰 **Примерная стоимость:** {rec['cost']}\n"
-    text += f"⏱ **Рекомендуемая продолжительность:** {rec['duration']}"
-
-    return text
-
-
-def _create_mock_alternative_recommendation(category: str, _: dict) -> str:
-    """Создает альтернативную заглушку рекомендации"""
-
-    # Альтернативные рекомендации
-    alternative_recommendations = {
-        "family": "Кипр (Айя-Напа)",
-        "pets": "Крым (Ялта)",
-        "photo": "Исландия (Рейкьявик)",
-        "budget": "Беларусь (Минск)",
-        "active": "Алтай (Белокуриха)"
-    }
-
-    destination = alternative_recommendations.get(
-        category, "Альтернативное направление"
-    )
-
-    text = f"🌍 **{destination}**\n\n"
-    text += "Альтернативный вариант, который также может вам подойти!\n\n"
-    text += "✨ **Почему стоит рассмотреть:**\n"
-    text += "• Другая атмосфера и культура\n"
-    text += "• Уникальные достопримечательности\n"
-    text += "• Отличное соотношение цена-качество\n\n"
-    text += "📋 **Практическая информация:** Подробности по запросу\n\n"
-    text += "💰 **Примерная стоимость:** Уточняется\n"
-    text += "⏱ **Рекомендуемая продолжительность:** 5-7 дней"
-
-    return text

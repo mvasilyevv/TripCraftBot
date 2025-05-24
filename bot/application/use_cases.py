@@ -1,4 +1,4 @@
-"""Use cases для TraveleBot"""
+"""Use cases для TripCraftBot"""
 
 import logging
 from typing import Optional

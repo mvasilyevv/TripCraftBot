@@ -1,4 +1,4 @@
-"""Конфигурация для TraveleBot"""
+"""Конфигурация для TripCraftBot"""
 
 import logging
 import os

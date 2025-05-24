@@ -2,9 +2,8 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
-from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 

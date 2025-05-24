@@ -1,1 +1,1 @@
-"""Тесты для TraveleBot"""
+"""Тесты для TripCraftBot"""

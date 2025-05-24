@@ -1,4 +1,4 @@
-"""Точка входа для TraveleBot"""
+"""Точка входа для TripCraftBot"""
 
 import asyncio
 import logging
@@ -9,8 +9,8 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis
 
-from config import TELEGRAM_BOT_TOKEN, LOG_LEVEL, DEBUG, FSM_TTL, get_redis_url
-from bot.handlers import start, categories, results
+from bot.handlers import categories, results, start
+from config import DEBUG, FSM_TTL, LOG_LEVEL, TELEGRAM_BOT_TOKEN, get_redis_url
 
 
 def setup_logging() -> None:
@@ -30,9 +30,7 @@ async def create_bot() -> Bot:
 
 
 async def create_dispatcher() -> Dispatcher:
-    redis = Redis.from_url(
-        get_redis_url(), encoding="utf-8", decode_responses=True
-    )
+    redis = Redis.from_url(get_redis_url(), encoding="utf-8", decode_responses=True)
     storage = RedisStorage(redis=redis, state_ttl=FSM_TTL)
     return Dispatcher(storage=storage)
 
@@ -71,9 +69,7 @@ async def main() -> None:
         dp.startup.register(on_startup)
         dp.shutdown.register(on_shutdown)
         logger.info("Запуск polling...")
-        await dp.start_polling(
-            bot, allowed_updates=["message", "callback_query"]
-        )
+        await dp.start_polling(bot, allowed_updates=["message", "callback_query"])
     except Exception as e:
         logger.error("Критическая ошибка при запуске бота: %s", e)
         sys.exit(1)

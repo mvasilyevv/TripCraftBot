@@ -1,6 +1,7 @@
 """Обработчики стартовых команд"""
 
 import logging
+
 from aiogram import Router
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -23,10 +24,7 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     await state.clear()
 
     # Отправляем главное меню без приветствия
-    await message.answer(
-        "Выберите тип путешествия:",
-        reply_markup=get_main_menu_keyboard()
-    )
+    await message.answer("Выберите тип путешествия:", reply_markup=get_main_menu_keyboard())
 
 
 @router.message(Command("menu"))
@@ -39,10 +37,7 @@ async def cmd_menu(message: Message, state: FSMContext) -> None:
     await state.clear()
 
     # Отправляем главное меню
-    await message.answer(
-        "Выберите тип путешествия:",
-        reply_markup=get_main_menu_keyboard()
-    )
+    await message.answer("Выберите тип путешествия:", reply_markup=get_main_menu_keyboard())
 
 
 @router.callback_query(lambda c: c.data == "action:new_search")
@@ -56,8 +51,7 @@ async def callback_new_search(callback: CallbackQuery, state: FSMContext) -> Non
     # Отправляем главное меню
     if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "Выберите тип путешествия:",
-            reply_markup=get_main_menu_keyboard()
+            "Выберите тип путешествия:", reply_markup=get_main_menu_keyboard()
         )
 
     await callback.answer()
@@ -74,8 +68,7 @@ async def callback_main_menu(callback: CallbackQuery, state: FSMContext) -> None
     # Отправляем главное меню
     if callback.message and isinstance(callback.message, Message):
         await callback.message.edit_text(
-            "Выберите тип путешествия:",
-            reply_markup=get_main_menu_keyboard()
+            "Выберите тип путешествия:", reply_markup=get_main_menu_keyboard()
         )
 
     await callback.answer()

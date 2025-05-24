@@ -1,4 +1,4 @@
-# TraveleBot
+# TripCraftBot
 
 Telegram бот для планирования путешествий
 
@@ -6,8 +6,8 @@ Telegram бот для планирования путешествий
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/mvasilyevv/TraveleBot.git
-cd TraveleBot
+git clone https://github.com/mvasilyevv/TripCraftBot.git
+cd TripCraftBot
 ```
 
 2. Создайте виртуальное окружение:
@@ -57,7 +57,7 @@ pre-commit install
 ## Структура проекта
 
 ```
-TraveleBot/
+TripCraftBot/
 ├── bot/
 │   ├── handlers/          # Обработчики событий
 │   ├── keyboards/         # Inline клавиатуры

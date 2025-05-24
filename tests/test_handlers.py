@@ -4,16 +4,15 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, User, Message
+from aiogram.types import CallbackQuery, Message, User
 
+from bot.handlers.categories import get_current_question_number, get_progress_text
 from bot.handlers.results import (
-    _create_mock_recommendation,
     _create_mock_alternative_recommendation,
+    _create_mock_recommendation,
     show_travel_recommendation,
 )
-from bot.handlers.categories import get_progress_text, get_current_question_number
 
 
 class TestResultsHandlers:

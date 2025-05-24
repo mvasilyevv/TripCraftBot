@@ -6,9 +6,7 @@ from bot.states.travel import TRAVEL_CATEGORIES
 def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     buttons = []
     for category_key, category_name in TRAVEL_CATEGORIES.items():
-        button = InlineKeyboardButton(
-            text=category_name, callback_data=f"category:{category_key}"
-        )
+        button = InlineKeyboardButton(text=category_name, callback_data=f"category:{category_key}")
         buttons.append([button])
 
     return InlineKeyboardMarkup(inline_keyboard=buttons)

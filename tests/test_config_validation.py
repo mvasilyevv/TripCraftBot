@@ -194,9 +194,7 @@ class TestBotConfiguration:
     def test_valid_bot_configuration(self) -> None:
         """Тест валидной конфигурации бота"""
         config = BotConfiguration(
-            telegram=TelegramConfig(
-                bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"
-            ),
+            telegram=TelegramConfig(bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"),
             openrouter=OpenRouterConfig(api_key="sk-1234567890abcdef"),
             redis=RedisConfig(),
             logging=LoggingConfig(),
@@ -209,9 +207,7 @@ class TestBotConfiguration:
     def test_get_redis_url(self) -> None:
         """Тест формирования URL Redis"""
         config = BotConfiguration(
-            telegram=TelegramConfig(
-                bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"
-            ),
+            telegram=TelegramConfig(bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"),
             openrouter=OpenRouterConfig(api_key="sk-1234567890abcdef"),
             redis=RedisConfig(host="localhost", port=6379, db=0, password="secret"),
             logging=LoggingConfig(),
@@ -224,9 +220,7 @@ class TestBotConfiguration:
     def test_get_redis_url_with_ssl(self) -> None:
         """Тест формирования URL Redis с SSL"""
         config = BotConfiguration(
-            telegram=TelegramConfig(
-                bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"
-            ),
+            telegram=TelegramConfig(bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"),
             openrouter=OpenRouterConfig(api_key="sk-1234567890abcdef"),
             redis=RedisConfig(ssl=True),
             logging=LoggingConfig(),
@@ -239,9 +233,7 @@ class TestBotConfiguration:
     def test_validate_configuration_warnings(self) -> None:
         """Тест предупреждений при валидации конфигурации"""
         config = BotConfiguration(
-            telegram=TelegramConfig(
-                bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"
-            ),
+            telegram=TelegramConfig(bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"),
             openrouter=OpenRouterConfig(
                 api_key="sk-1234567890abcdef",
                 timeout=150,  # Большой таймаут
@@ -258,7 +250,7 @@ class TestBotConfiguration:
         """Тест валидации с отсутствующим токеном"""
         # Создаем конфигурацию с пустым токеном, обходя pydantic валидацию
         config = BotConfiguration(
-            telegram=TelegramConfig(bot_token="x"),  # Минимальный токен
+            telegram=TelegramConfig(bot_token="123456789:ABCdefGHIjklMNOpqrsTUVwxyz-1234567890"),
             openrouter=OpenRouterConfig(api_key="sk-1234567890abcdef"),
             redis=RedisConfig(),
             logging=LoggingConfig(),

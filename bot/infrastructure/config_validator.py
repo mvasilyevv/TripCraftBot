@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field, field_validator
 
 class ConfigurationError(Exception):
     """Ошибка конфигурации"""
+
     pass
+
 
 logger = logging.getLogger(__name__)
 
@@ -52,22 +54,14 @@ class OpenRouterConfig(BaseModel):
     """Конфигурация OpenRouter API"""
 
     api_key: str = Field(..., min_length=10, description="Ключ OpenRouter API")
-    base_url: str = Field(
-        default="https://openrouter.ai/api/v1", description="Базовый URL API"
-    )
+    base_url: str = Field(default="https://openrouter.ai/api/v1", description="Базовый URL API")
     primary_model: str = Field(
         default="perplexity/llama-3.1-sonar-large-128k-online",
         description="Основная модель",
     )
-    fallback_model: str = Field(
-        default="anthropic/claude-3-haiku", description="Резервная модель"
-    )
-    timeout: int = Field(
-        default=30, ge=5, le=300, description="Таймаут запроса в секундах"
-    )
-    retries: int = Field(
-        default=2, ge=0, le=10, description="Количество повторных попыток"
-    )
+    fallback_model: str = Field(default="anthropic/claude-3-haiku", description="Резервная модель")
+    timeout: int = Field(default=30, ge=5, le=300, description="Таймаут запроса в секундах")
+    retries: int = Field(default=2, ge=0, le=10, description="Количество повторных попыток")
 
     @field_validator("api_key")
     @classmethod
@@ -123,9 +117,7 @@ class LoggingConfig(BaseModel):
         valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
         v_upper = v.upper()
         if v_upper not in valid_levels:
-            raise ValueError(
-                f"Уровень логирования должен быть одним из: {valid_levels}"
-            )
+            raise ValueError(f"Уровень логирования должен быть одним из: {valid_levels}")
         return v_upper
 
 

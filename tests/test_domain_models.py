@@ -1,6 +1,5 @@
 """Тесты для доменных моделей"""
 
-import pytest
 
 from bot.domain.constants import REQUIRED_QUESTIONS
 from bot.domain.models import TravelCategory, TravelRecommendation, TravelRequest
@@ -11,9 +10,7 @@ class TestTravelRequest:
 
     def test_create_travel_request(self) -> None:
         """Тест создания запроса на путешествие"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         assert request.user_id == 123
         assert request.category == TravelCategory.FAMILY
@@ -21,9 +18,7 @@ class TestTravelRequest:
 
     def test_add_answer(self) -> None:
         """Тест добавления ответа"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         request.add_answer("family_size", "2+1", "2 взрослых + 1 ребенок")
 
@@ -36,27 +31,21 @@ class TestTravelRequest:
 
     def test_get_nonexistent_answer(self) -> None:
         """Тест получения несуществующего ответа"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         answer = request.get_answer("nonexistent")
         assert answer is None
 
     def test_is_complete_empty(self) -> None:
         """Тест проверки завершенности пустого запроса"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         required_questions = REQUIRED_QUESTIONS[TravelCategory.FAMILY]
         assert not request.is_complete(required_questions)
 
     def test_is_complete_partial(self) -> None:
         """Тест проверки завершенности частично заполненного запроса"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         request.add_answer("family_size", "2+1", "2 взрослых + 1 ребенок")
 
@@ -65,9 +54,7 @@ class TestTravelRequest:
 
     def test_is_complete_full(self) -> None:
         """Тест проверки завершенности полностью заполненного запроса"""
-        request = TravelRequest(
-            user_id=123, category=TravelCategory.FAMILY, answers={}
-        )
+        request = TravelRequest(user_id=123, category=TravelCategory.FAMILY, answers={})
 
         # Добавляем все обязательные ответы
         request.add_answer("family_size", "2+1", "2 взрослых + 1 ребенок")
