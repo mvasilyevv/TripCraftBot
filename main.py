@@ -10,6 +10,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis
 
 from config import TELEGRAM_BOT_TOKEN, LOG_LEVEL, DEBUG, FSM_TTL, get_redis_url
+from bot.handlers import start, categories, results
 
 
 def setup_logging() -> None:
@@ -37,7 +38,10 @@ async def create_dispatcher() -> Dispatcher:
 
 
 async def register_handlers(dp: Dispatcher) -> None:
-    pass
+    """Регистрирует все обработчики событий"""
+    dp.include_router(start.router)
+    dp.include_router(categories.router)
+    dp.include_router(results.router)
 
 
 async def on_startup(bot: Bot) -> None:
