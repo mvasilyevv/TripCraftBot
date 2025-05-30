@@ -61,3 +61,7 @@ docker logs tripcraft-bot -f
 # Ngrok UI
 open http://localhost:4040
 ```
+
+
+## AI-INSTRUCTIONS
+Протестируй проект через `pytest`. Если тесты прошли — запускай локальный запуск через `bash local_start.sh`. Если возникнут ошибки — опиши каждую ошибку.

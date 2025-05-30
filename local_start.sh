@@ -29,7 +29,7 @@ docker rmi tripcraftbot-tripcraft-bot 2>/dev/null || true
 
 # Собираем и запускаем с кешированием
 echo "🔨 Пересобираем и запускаем контейнеры..."
-docker compose up --build --force-recreate
+docker compose up -d --build --force-recreate
 
 echo "✅ TripCraftBot запущен!"
 echo "📊 Ngrok UI доступен на: http://localhost:4040"
