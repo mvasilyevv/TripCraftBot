@@ -1,3 +1,5 @@
+import os
+
 import ollama
 import subprocess
 import re
@@ -5,10 +7,13 @@ import ast
 import sys
 from pathlib import Path
 
+from together import Together
+
 README_SECTION_HEADER = "## AI-INSTRUCTIONS"
 README_PATH = "README.md"
 TEST_COMMAND = ["pytest", "--tb=short", "--maxfail=3"]
 
+client = Together(api_key=os.getenv("TOGETHER_AI_TOKEN"))
 
 def extract_clean_dict(llm_output):
     try:
@@ -50,11 +55,11 @@ def get_readme_section():
 
 
 def ask_llm(prompt: str) -> str:
-    response = ollama.chat(
-        model="deepseek-r1:8b",
-        messages=[{"role": "system", "content": prompt}]
+    completion = client.chat.completions.create(
+        model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        messages=[{"role": "user", "content": prompt}],
     )
-    return response["message"]["content"].strip()
+    return completion.choices[0].message.content
 
 
 def run_command(command, description):

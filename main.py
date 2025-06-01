@@ -22,6 +22,8 @@ def setup_logging() -> None:
         level=getattr(logging, LOG_LEVEL),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
+        filename="log/app.log",  # укажите имя файла
+        filemode="a"
     )
     logging.getLogger("aiogram").setLevel(logging.WARNING)
     logging.getLogger("aiohttp").setLevel(logging.WARNING)
